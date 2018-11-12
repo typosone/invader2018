@@ -26,16 +26,19 @@ phina.define('MainScene', {
         });
         this.gridX = Grid(SCREEN_WIDTH, 40);
         this.gridY = Grid(SCREEN_HEIGHT, 40);
-
         this.backgroundColor = 'black';
 
         this.player = Player(
             this.gridX.center(), this.gridY.span(37)).addChildTo(this);
 
-        this.enemyGroup = DisplayElement().addChildTo(this);
-        const enemy = Enemy(this.gridX.span(5), this.gridY.span(5), ENEMY_ASSETS[0]).addChildTo(this.enemyGroup)
+        this.enemyGroup = EnemyGroup().addChildTo(this);
+        const enemy1 = Enemy(this.gridX.span(5), this.gridY.span(3), ENEMY_ASSETS[0]).addChildTo(this.enemyGroup);
+        const enemy2 = Enemy(this.gridX.span(7), this.gridY.span(7), ENEMY_ASSETS[1]).addChildTo(this.enemyGroup);
+        const enemy3 = Enemy(this.gridX.span(9), this.gridY.span(11), ENEMY_ASSETS[2]).addChildTo(this.enemyGroup);
+        const enemy4 = Enemy(this.gridX.span(11), this.gridY.span(15), ENEMY_ASSETS[3]).addChildTo(this.enemyGroup);
+        const enemy5 = Enemy(this.gridX.span(13), this.gridY.span(19), ENEMY_ASSETS[4]).addChildTo(this.enemyGroup);
     },
-    update: function () {
+    update: function (app) {
         // 弾と敵の当たり判定
         if (this.player.bullet != null) {
             this.enemyGroup.children.some(enemy => {
@@ -126,9 +129,39 @@ phina.define('Enemy', {
     },
     onhit: function () {
         this.remove();
-    }
+    },
 });
 
+phina.define('EnemyGroup', {
+    superClass: 'DisplayElement',
+    init: function () {
+        this.superInit();
+        this.time = 0;
+        this.interval = 500;
+        this.direction = 1;
+    },
+    update: function (app) {
+        this.time += app.deltaTime;
+        const scene = this.parent;
+
+        let right = 0;
+        let left = scene.gridX.columns;
+
+        if (this.time / this.interval >= 1) {
+            this.children.forEach(enemy => {
+                enemy.moveBy(scene.gridX.unit() * this.direction, 0);
+                right = Math.max(right, enemy.x / scene.gridX.unit());
+                left = Math.min(left, enemy.x / scene.gridX.unit());
+            });
+            this.time -= this.interval;
+        }
+
+        if (this.direction > 0 && right >= 38
+            || this.direction < 0 && left <= 2) {
+            this.direction = -this.direction
+        }
+    }
+});
 
 phina.main(() => {
     const app = GameApp({
