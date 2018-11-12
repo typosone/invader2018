@@ -24,6 +24,7 @@ phina.define('MainScene', {
             width: SCREEN_WIDTH,
             height: SCREEN_HEIGHT,
         });
+        // X/Yそれぞれ40分割したグリッドで置き換え
         this.gridX = Grid(SCREEN_WIDTH, 40);
         this.gridY = Grid(SCREEN_HEIGHT, 40);
         this.backgroundColor = 'black';
@@ -32,6 +33,7 @@ phina.define('MainScene', {
             this.gridX.center(), this.gridY.span(37)).addChildTo(this);
 
         this.enemyGroup = EnemyGroup().addChildTo(this);
+        // 以下の敵の追加はダメパターンです。真似しないで
         const enemy1 = Enemy(this.gridX.span(5), this.gridY.span(3), ENEMY_ASSETS[0]).addChildTo(this.enemyGroup);
         const enemy2 = Enemy(this.gridX.span(7), this.gridY.span(7), ENEMY_ASSETS[1]).addChildTo(this.enemyGroup);
         const enemy3 = Enemy(this.gridX.span(9), this.gridY.span(11), ENEMY_ASSETS[2]).addChildTo(this.enemyGroup);
@@ -43,6 +45,7 @@ phina.define('MainScene', {
         if (this.player.bullet != null) {
             this.enemyGroup.children.some(enemy => {
                 if (enemy.hitTestElement(this.player.bullet)) {
+                    // 直接それぞれのメソッドを呼ばずにイベントで対応させる。
                     enemy.flare('hit');
                     this.player.bullet.flare('hit');
                     return true;
@@ -81,10 +84,12 @@ phina.define('Player', {
             }
         }
 
+        // 弾は同時に1発しか発射できない仕様なので、bulletがnullのときにスペースキー押されていたら発射
         if (this.bullet == null && key.getKey('space')) {
             this.bullet = Bullet(this.x, this.top).addChildTo(this.parent);
         }
 
+        // すでにbulletが無効(isInvalid==true)ならnullにする
         if (this.bullet != null && this.bullet.isInvalid) {
             this.bullet = null;
         }
@@ -106,6 +111,7 @@ phina.define('Bullet', {
         this.SPEED = 5;
     },
 
+    // 弾を画面上から消して無効にするイベントリスナ(なにかに当たった)
     onhit: function () {
         this.remove();
         this.isInvalid = true;
@@ -127,6 +133,8 @@ phina.define('Enemy', {
         this.x = x;
         this.y = y;
     },
+
+    // 敵を画面上から消すイベントリスナ(倒された)
     onhit: function () {
         this.remove();
     },
@@ -137,10 +145,11 @@ phina.define('EnemyGroup', {
     init: function () {
         this.superInit();
         this.time = 0;
-        this.interval = 500;
+        this.interval = 2000;
         this.direction = 1;
     },
     update: function (app) {
+        // deltaTimeを加算していって経過時間を計る
         this.time += app.deltaTime;
         const scene = this.parent;
 
@@ -150,12 +159,15 @@ phina.define('EnemyGroup', {
         if (this.time / this.interval >= 1) {
             this.children.forEach(enemy => {
                 enemy.moveBy(scene.gridX.unit() * this.direction, 0);
+                // 全体の右端のポジションを計算
                 right = Math.max(right, enemy.x / scene.gridX.unit());
+                // 全体の左端のポジションを計算
                 left = Math.min(left, enemy.x / scene.gridX.unit());
             });
             this.time -= this.interval;
         }
 
+        // 移動の向きを変更するタイミング
         if (this.direction > 0 && right >= 38
             || this.direction < 0 && left <= 2) {
             this.direction = -this.direction
