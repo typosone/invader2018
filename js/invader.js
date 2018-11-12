@@ -41,7 +41,11 @@ phina.define('MainScene', {
             this.enemyGroup.children.some(enemy => {
                 if (enemy.hitTestElement(this.player.bullet)) {
                     enemy.flare('hit');
+                    this.player.bullet.flare('hit');
+                    return true;
                 }
+
+                return false;
             })
         }
     }
@@ -79,7 +83,6 @@ phina.define('Player', {
         }
 
         if (this.bullet != null && this.bullet.isInvalid) {
-            this.bullet.remove();
             this.bullet = null;
         }
     }
@@ -100,10 +103,15 @@ phina.define('Bullet', {
         this.SPEED = 5;
     },
 
+    onhit: function () {
+        this.remove();
+        this.isInvalid = true;
+    },
+
     update: function () {
         this.y -= this.SPEED;
         if (this.bottom < 0) {
-            this.isInvalid = true;
+            this.flare('hit');
         }
     }
 });
