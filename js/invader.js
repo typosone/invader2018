@@ -13,6 +13,9 @@ const ASSETS = {
         "toma": "./assets/image/tomapiyo.png"
     }
 };
+const ENEMY_ASSETS = [
+    "buro", "mero", "mika", "nasu", "take"
+];
 
 phina.define('MainScene', {
     superClass: 'DisplayScene',
@@ -26,8 +29,21 @@ phina.define('MainScene', {
 
         this.backgroundColor = 'black';
 
-        const player = Player(
+        this.player = Player(
             this.gridX.center(), this.gridY.span(37)).addChildTo(this);
+
+        this.enemyGroup = DisplayElement().addChildTo(this);
+        const enemy = Enemy(this.gridX.span(5), this.gridY.span(5), ENEMY_ASSETS[0]).addChildTo(this.enemyGroup)
+    },
+    update: function () {
+        // 弾と敵の当たり判定
+        if (this.player.bullet != null) {
+            this.enemyGroup.children.some(enemy => {
+                if (enemy.hitTestElement(this.player.bullet)) {
+                    enemy.flare('hit');
+                }
+            })
+        }
     }
 });
 
@@ -89,6 +105,19 @@ phina.define('Bullet', {
         if (this.bottom < 0) {
             this.isInvalid = true;
         }
+    }
+});
+
+phina.define('Enemy', {
+    superClass: 'Sprite',
+    init: function (x, y, image) {
+        this.superInit(image, 64, 64);
+        this.setFrameIndex(7, 64, 64);
+        this.x = x;
+        this.y = y;
+    },
+    onhit: function () {
+        this.remove();
     }
 });
 
